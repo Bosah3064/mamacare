@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/models/models.dart';
 import '../../core/providers/app_providers.dart';
 import '../../core/providers/auth_provider.dart';
+import '../../core/services/facility_service.dart';
 import '../../core/theme/app_theme.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
@@ -26,19 +27,24 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   GravityType _gravityType = GravityType.primigravida;
   int _previousPregnancies = 0;
   int _previousBirths = 0;
-  String _preferredFacility = 'pumwani_maternity';
+  String _preferredFacility = 'knh_nairobi';
   Language _selectedLanguage = Language.sw;
 
-  final List<Map<String, String>> _kenyaFacilities = const [
-    {'id': 'pumwani_maternity', 'name': 'Pumwani Maternity Hospital (Nairobi)', 'level': 'Level 4 Specialized'},
-    {'id': 'knh_nairobi', 'name': 'Kenyatta National Hospital (Nairobi)', 'level': 'Level 6 National Referral'},
-    {'id': 'mtrh_eldoret', 'name': 'Moi Teaching & Referral Hospital (Eldoret)', 'level': 'Level 6 National Referral'},
-    {'id': 'nakuru_level5', 'name': 'Nakuru Level 5 Hospital (Rift Valley)', 'level': 'Level 5 County Referral'},
-    {'id': 'coast_general', 'name': 'Coast General Teaching & Referral (Mombasa)', 'level': 'Level 5 County Referral'},
-    {'id': 'jaramogi_oginga', 'name': 'Jaramogi Oginga Odinga TRH (Kisumu)', 'level': 'Level 5 County Referral'},
-    {'id': 'machakos_level5', 'name': 'Machakos Level 5 Hospital (Machakos)', 'level': 'Level 5 County Referral'},
-    {'id': 'mbagathi_hospital', 'name': 'Mbagathi Hospital (Nairobi)', 'level': 'Level 4 District Hospital'},
-  ];
+  List<Map<String, String>> get _kenyaFacilities {
+    final list = FacilityService.instance.allFacilities;
+    if (list.isNotEmpty) {
+      return list
+          .map((f) => {
+                'id': f.id,
+                'name': '${f.name} (${f.county})',
+                'level': f.levelLabel,
+              })
+          .toList();
+    }
+    return const [
+      {'id': 'knh_nairobi', 'name': 'Kenyatta National Hospital (Nairobi)', 'level': 'Level 6 National Referral'},
+    ];
+  }
 
   @override
   void initState() {

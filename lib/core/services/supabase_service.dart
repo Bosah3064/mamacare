@@ -514,7 +514,7 @@ class SupabaseService {
         id: 'anc-$userId-wk$weekNum',
         userId: userId,
         pregnancyId: pregnancyId,
-        facilityId: facilityId ?? 'pumwani_maternity',
+        facilityId: facilityId ?? 'knh_nairobi',
         appointmentDate: targetDate,
         appointmentType: AppointmentType.routine,
         status: isPast ? AppointmentStatus.completed : AppointmentStatus.scheduled,

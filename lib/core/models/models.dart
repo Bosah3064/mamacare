@@ -438,6 +438,8 @@ class BloodPressureEntry extends Equatable {
     updatedAt: DateTime.parse(json['updated_at'] as String),
   );
 
+  bool get isElevated => systolic >= 140 || diastolic >= 90;
+
   JsonMap toJson() => {
     'id': id,
     'health_entry_id': healthEntryId,

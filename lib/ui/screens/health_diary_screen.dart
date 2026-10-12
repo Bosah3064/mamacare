@@ -25,10 +25,14 @@ class _HealthDiaryScreenState extends ConsumerState<HealthDiaryScreen> {
   int _activeKickCount = 0;
 
   void _showLogModal(BuildContext context, bool isSwahili) {
-    final sysCtrl = TextEditingController(text: '118');
-    final diaCtrl = TextEditingController(text: '76');
-    final pulseCtrl = TextEditingController(text: '74');
-    final wtCtrl = TextEditingController(text: '64.8');
+    final diary = ref.read(healthDiaryProvider);
+    final lastBp = diary.bpEntries.isNotEmpty ? diary.bpEntries.first : null;
+    final lastWeight = diary.weightEntries.isNotEmpty ? diary.weightEntries.first : null;
+
+    final sysCtrl = TextEditingController(text: lastBp != null ? '${lastBp.systolic}' : '');
+    final diaCtrl = TextEditingController(text: lastBp != null ? '${lastBp.diastolic}' : '');
+    final pulseCtrl = TextEditingController(text: (lastBp?.pulse != null) ? '${lastBp!.pulse}' : '');
+    final wtCtrl = TextEditingController(text: lastWeight != null ? '${lastWeight.weightKg}' : '');
     final notesCtrl = TextEditingController();
     String? selectedSymptom;
     SymptomSeverity selectedSeverity = SymptomSeverity.mild;
@@ -190,7 +194,7 @@ class _HealthDiaryScreenState extends ConsumerState<HealthDiaryScreen> {
                           final currentUid = SupabaseService.instance.currentUserId;
                           await ref.read(healthDiaryProvider.notifier).logHealthRecord(
                             pregnancyId: pregnancy?.id ?? 'preg-$currentUid',
-                            userId: pregnancy?.userId ?? currentUid ?? 'demo-user-amani',
+                            userId: pregnancy?.userId ?? currentUid ?? SupabaseService.defaultSeedUserId,
                             notes: notesCtrl.text.trim(),
                             systolic: sys,
                             diastolic: dia,
@@ -270,15 +274,23 @@ class _HealthDiaryScreenState extends ConsumerState<HealthDiaryScreen> {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: MamaCareColors.successSurface,
+                                    color: latestBp?.isElevated == true
+                                        ? MamaCareColors.errorSurface
+                                        : MamaCareColors.successSurface,
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(
-                                    isSwahili ? 'Kawaida' : 'Normal',
-                                    style: const TextStyle(
+                                    latestBp != null
+                                        ? (latestBp.isElevated
+                                            ? (isSwahili ? 'Iko Juu' : 'Elevated')
+                                            : (isSwahili ? 'Kawaida' : 'Normal'))
+                                        : (isSwahili ? 'Hakuna' : 'No data'),
+                                    style: TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.bold,
-                                      color: MamaCareColors.success,
+                                      color: latestBp?.isElevated == true
+                                          ? MamaCareColors.error
+                                          : MamaCareColors.success,
                                     ),
                                   ),
                                 ),
@@ -286,7 +298,7 @@ class _HealthDiaryScreenState extends ConsumerState<HealthDiaryScreen> {
                             ),
                             const SizedBox(height: 10),
                             Text(
-                              latestBp != null ? '${latestBp.systolic}/${latestBp.diastolic}' : '118/76',
+                              latestBp != null ? '${latestBp.systolic}/${latestBp.diastolic}' : '--/--',
                               style: const TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
@@ -320,9 +332,13 @@ class _HealthDiaryScreenState extends ConsumerState<HealthDiaryScreen> {
                                     color: MamaCareColors.secondarySurface,
                                     borderRadius: BorderRadius.circular(6),
                                   ),
-                                  child: const Text(
-                                    '+2.1 kg',
-                                    style: TextStyle(
+                                  child: Text(
+                                    diaryState.weightEntries.length >= 2
+                                        ? '${(latestWeight!.weightKg - diaryState.weightEntries[1].weightKg) >= 0 ? '+' : ''}${(latestWeight.weightKg - diaryState.weightEntries[1].weightKg).toStringAsFixed(1)} kg'
+                                        : (latestWeight != null
+                                            ? (isSwahili ? 'Imehifadhiwa' : 'Recorded')
+                                            : (isSwahili ? 'Hakuna' : 'No data')),
+                                    style: const TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.bold,
                                       color: MamaCareColors.secondaryDark,
@@ -333,7 +349,7 @@ class _HealthDiaryScreenState extends ConsumerState<HealthDiaryScreen> {
                             ),
                             const SizedBox(height: 10),
                             Text(
-                              latestWeight != null ? '${latestWeight.weightKg} kg' : '64.8 kg',
+                              latestWeight != null ? '${latestWeight.weightKg} kg' : '-- kg',
                               style: const TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
@@ -405,6 +421,7 @@ class _HealthDiaryScreenState extends ConsumerState<HealthDiaryScreen> {
                                 setState(() {
                                   _activeKickCount++;
                                 });
+                                ref.read(healthDiaryProvider.notifier).updateKickCount(_activeKickCount);
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: MamaCareColors.primary,
@@ -425,6 +442,7 @@ class _HealthDiaryScreenState extends ConsumerState<HealthDiaryScreen> {
                               setState(() {
                                 _activeKickCount = 0;
                               });
+                              ref.read(healthDiaryProvider.notifier).updateKickCount(0);
                             },
                             style: OutlinedButton.styleFrom(
                               foregroundColor: MamaCareColors.textSecondary,
@@ -459,6 +477,10 @@ class _HealthDiaryScreenState extends ConsumerState<HealthDiaryScreen> {
                   )
                 else
                   ...diaryState.entries.map((entry) {
+                    final matchingBp = diaryState.bpEntries.where((bp) => bp.healthEntryId == entry.id).firstOrNull;
+                    final matchingWeight = diaryState.weightEntries.where((w) => w.healthEntryId == entry.id).firstOrNull;
+                    final matchingSymptoms = diaryState.symptoms.where((s) => s.healthEntryId == entry.id).toList();
+
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 10),
                       child: MamaCard(
@@ -483,28 +505,54 @@ class _HealthDiaryScreenState extends ConsumerState<HealthDiaryScreen> {
                                 style: const TextStyle(fontSize: 13, color: MamaCareColors.textPrimary),
                               ),
                             ],
-                            const SizedBox(height: 6),
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                  decoration: BoxDecoration(
-                                    color: MamaCareColors.background,
-                                    borderRadius: BorderRadius.circular(6),
+                            if (matchingBp != null || matchingWeight != null || matchingSymptoms.isNotEmpty) ...[
+                              const SizedBox(height: 8),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 6,
+                                children: [
+                                  if (matchingBp != null)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      decoration: BoxDecoration(
+                                        color: MamaCareColors.background,
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(color: MamaCareColors.divider),
+                                      ),
+                                      child: Text(
+                                        'BP: ${matchingBp.systolic}/${matchingBp.diastolic} mmHg',
+                                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                                      ),
+                                    ),
+                                  if (matchingWeight != null)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      decoration: BoxDecoration(
+                                        color: MamaCareColors.background,
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(color: MamaCareColors.divider),
+                                      ),
+                                      child: Text(
+                                        '${isSwahili ? 'Uzito' : 'Weight'}: ${matchingWeight.weightKg} kg',
+                                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                                      ),
+                                    ),
+                                  ...matchingSymptoms.map(
+                                    (sym) => Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      decoration: BoxDecoration(
+                                        color: MamaCareColors.accentSurface,
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        sym.symptomName,
+                                        style: const TextStyle(fontSize: 11, color: MamaCareColors.accentDark, fontWeight: FontWeight.w500),
+                                      ),
+                                    ),
                                   ),
-                                  child: const Text('BP: 118/76 mmHg', style: TextStyle(fontSize: 11)),
-                                ),
-                                const SizedBox(width: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                  decoration: BoxDecoration(
-                                    color: MamaCareColors.background,
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: const Text('Uzito: 64.5 kg', style: TextStyle(fontSize: 11)),
-                                ),
-                              ],
-                            ),
+                                ],
+                              ),
+                            ],
                           ],
                         ),
                       ),

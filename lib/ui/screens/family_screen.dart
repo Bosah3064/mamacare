@@ -116,7 +116,7 @@ class FamilyScreen extends ConsumerWidget {
                     final currentUid = SupabaseService.instance.currentUserId;
                     final connection = FamilyConnection(
                       id: const Uuid().v4(),
-                      userId: userProfile?.id ?? currentUid ?? 'demo-user-amani',
+                      userId: userProfile?.id ?? currentUid ?? SupabaseService.defaultSeedUserId,
                       familyMemberName: nameCtrl.text.trim(),
                       familyMemberPhone: phoneCtrl.text.trim(),
                       relationship: relationship,

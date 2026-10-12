@@ -11,6 +11,7 @@ import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../core/models/models.dart';
 import '../../core/providers/app_providers.dart';
+import '../../core/services/facility_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../widgets/mama_card.dart';
 
@@ -33,34 +34,53 @@ class AncSummaryScreen extends ConsumerWidget {
     final completed = appointments.where((a) => a.status == AppointmentStatus.completed).toList();
     final latestBp = diary.bpEntries.isNotEmpty ? diary.bpEntries.first : null;
     final latestWeight = diary.weightEntries.isNotEmpty ? diary.weightEntries.first : null;
+    final emergencyContacts = ref.watch(emergencyContactsProvider).value ?? [];
+    final primaryEmergency = emergencyContacts.isNotEmpty ? emergencyContacts.first : null;
 
     final eddStr = pregnancy != null
         ? DateFormat('d MMMM yyyy').format(pregnancy.estimatedDueDate)
         : 'Unknown';
 
+    final emergencyText = primaryEmergency != null
+        ? '${primaryEmergency.name} (${primaryEmergency.relationship}): ${primaryEmergency.phone}'
+        : 'Kenya Red Cross Dispatch: 1199';
+
+    final gravidityStr = pregnancy?.gravityType == GravityType.multigravida
+        ? 'Multigravida (${pregnancy?.previousPregnancies ?? 1} previous)'
+        : 'Primigravida (First pregnancy)';
+
+    final String facilityName = pregnancy?.preferredFacilityId != null
+        ? (FacilityService.instance.allFacilities
+            .where((f) => f.id == pregnancy!.preferredFacilityId)
+            .firstOrNull
+            ?.name ??
+            pregnancy!.preferredFacilityId ??
+            (isSwahili ? "Kituo cha Afya" : "Health Facility"))
+        : (isSwahili ? "Kituo Hakijachaguliwa" : "Facility not selected");
+
     final summaryText = '''
 MAMACARE KE — MATERNAL ANC CLINICAL SUMMARY
 Generated on: ${DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now())}
-Patient Name: ${user?.fullName ?? "Amani Wanjiku"}
-Phone: ${user?.phone ?? "+254712345678"}
-County: ${user?.countyId ?? "Nairobi"} (Sub-County: ${user?.subCountyId ?? "Westlands"})
+Patient Name: ${user?.fullName.isNotEmpty == true ? user!.fullName : (isSwahili ? "Mama Mjamzito" : "Expectant Mother")}
+Phone: ${user?.phone ?? (isSwahili ? "Haijarekodiwa" : "Not recorded")}
+County: ${user?.countyId ?? "Kenya"}${user?.subCountyId != null ? " (Sub-County: ${user!.subCountyId})" : ""}
 
 PREGNANCY PROFILE:
-- Gestational Age: ${pregnancy?.currentWeek ?? 24} Weeks (Trimester ${pregnancy?.trimester ?? 2})
+- Gestational Age: ${pregnancy?.currentWeek != null ? "${pregnancy!.currentWeek} Weeks (Trimester ${pregnancy.trimester})" : (isSwahili ? "Haijarekodiwa" : "Not recorded")}
 - Estimated Due Date (EDD): $eddStr
-- Gravidity / Parity: Primigravida (First pregnancy)
-- Assigned Health Facility: Pumwani Maternity Hospital / Westlands HC
+- Gravidity / Parity: $gravidityStr
+- Assigned Health Facility: $facilityName
 
 RECENT VITALS:
-- Blood Pressure: ${latestBp != null ? "${latestBp.systolic}/${latestBp.diastolic} mmHg" : "118/76 mmHg"}
-- Weight: ${latestWeight != null ? "${latestWeight.weightKg} kg" : "64.8 kg"}
-- Fetal Kicks: Normal & Active (14+ movements/2h)
+- Blood Pressure: ${latestBp != null ? "${latestBp.systolic}/${latestBp.diastolic} mmHg" : (isSwahili ? "Hakuna rekodi" : "Pending recording")}
+- Weight: ${latestWeight != null ? "${latestWeight.weightKg} kg" : (isSwahili ? "Hakuna rekodi" : "Pending recording")}
+- Fetal Kicks: ${diary.kickCount > 0 ? "${diary.kickCount} kicks recorded" : (isSwahili ? "Haijarekodiwa" : "Pending recording")}
 
 KENYA MOH ANC CONTACTS RECORD (${completed.length}/8 Completed):
-${completed.map((a) => "• ${a.title} (${DateFormat('yyyy-MM-dd').format(a.appointmentDate)}): ${a.notes ?? 'Routine checks normal'}").join('\n')}
+${completed.isEmpty ? (isSwahili ? "• Hakuna kliniki iliyokamilika bado." : "• No ANC contacts completed yet.") : completed.map((a) => "• ${a.title} (${DateFormat('yyyy-MM-dd').format(a.appointmentDate)}): ${a.notes ?? 'Routine checks normal'}").join('\n')}
 
 EMERGENCY CONTACT:
-- David Wanjiku (Spouse): +254722998877
+- $emergencyText
 ''';
 
     return Scaffold(
@@ -152,7 +172,7 @@ EMERGENCY CONTACT:
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          user?.fullName ?? 'Amani Wanjiku',
+                          user?.fullName.isNotEmpty == true ? user!.fullName : (isSwahili ? 'Mama Mjamzito' : 'Expectant Mother'),
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                         ),
                         Text(
@@ -182,8 +202,8 @@ EMERGENCY CONTACT:
                       eddStr,
                     ),
                     _buildInfoColumn(
-                      isSwahili ? 'Kundi la Damu' : 'Blood Group',
-                      'O+ (Rhesus +)',
+                      isSwahili ? 'Kituo cha Afya' : 'Assigned Clinic',
+                      facilityName,
                     ),
                   ],
                 ),
@@ -208,20 +228,20 @@ EMERGENCY CONTACT:
                   children: [
                     _buildVitalBadge(
                       Icons.favorite,
-                      latestBp != null ? '${latestBp.systolic}/${latestBp.diastolic}' : '118/76',
+                      latestBp != null ? '${latestBp.systolic}/${latestBp.diastolic}' : '--/--',
                       'BP (mmHg)',
                       MamaCareColors.error,
                     ),
                     _buildVitalBadge(
                       Icons.monitor_weight_outlined,
-                      latestWeight != null ? '${latestWeight.weightKg} kg' : '64.8 kg',
+                      latestWeight != null ? '${latestWeight.weightKg} kg' : '-- kg',
                       isSwahili ? 'Uzito' : 'Weight',
                       MamaCareColors.secondary,
                     ),
                     _buildVitalBadge(
                       Icons.child_care,
-                      '14+',
-                      isSwahili ? 'Mateke / 2h' : 'Kicks / 2h',
+                      diary.kickCount > 0 ? '${diary.kickCount}' : '--',
+                      isSwahili ? 'Mateke' : 'Kicks',
                       MamaCareColors.accent,
                     ),
                   ],

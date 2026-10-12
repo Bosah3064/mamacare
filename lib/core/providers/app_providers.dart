@@ -221,6 +221,7 @@ class HealthDiaryState {
   final List<SymptomEntry> symptoms;
   final List<BloodPressureEntry> bpEntries;
   final List<WeightEntry> weightEntries;
+  final int kickCount;
   final bool isLoading;
 
   const HealthDiaryState({
@@ -228,6 +229,7 @@ class HealthDiaryState {
     this.symptoms = const [],
     this.bpEntries = const [],
     this.weightEntries = const [],
+    this.kickCount = 0,
     this.isLoading = false,
   });
 
@@ -236,6 +238,7 @@ class HealthDiaryState {
     List<SymptomEntry>? symptoms,
     List<BloodPressureEntry>? bpEntries,
     List<WeightEntry>? weightEntries,
+    int? kickCount,
     bool? isLoading,
   }) {
     return HealthDiaryState(
@@ -243,6 +246,7 @@ class HealthDiaryState {
       symptoms: symptoms ?? this.symptoms,
       bpEntries: bpEntries ?? this.bpEntries,
       weightEntries: weightEntries ?? this.weightEntries,
+      kickCount: kickCount ?? this.kickCount,
       isLoading: isLoading ?? this.isLoading,
     );
   }
@@ -257,6 +261,10 @@ class HealthDiaryNotifier extends StateNotifier<HealthDiaryState> {
 
   HealthDiaryNotifier(this._ref) : super(const HealthDiaryState(isLoading: true)) {
     _initStream();
+  }
+
+  void updateKickCount(int count) {
+    state = state.copyWith(kickCount: count);
   }
 
   void _initStream() {
@@ -297,6 +305,7 @@ class HealthDiaryNotifier extends StateNotifier<HealthDiaryState> {
       symptoms: symptoms,
       bpEntries: bps,
       weightEntries: wts,
+      kickCount: state.kickCount,
       isLoading: false,
     );
   }

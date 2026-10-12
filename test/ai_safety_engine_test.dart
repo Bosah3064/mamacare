@@ -54,6 +54,31 @@ void main() {
     test('detects preeclampsia signs in Kiswahili (kichwa kinauma sana na kiza machoni)', () {
       final assessment = engine.evaluate('Kichwa kinauma sana na ninaona giza machoni');
       expect(assessment.isUrgent || assessment.isEmergency, isTrue);
+      expect(assessment.triggeredRules.any((r) => r.id == 'severe_headache_visual'), isTrue);
+    });
+
+    test('detects rupture of membranes in Kiswahili (maji ya uzazi kuvuja)', () {
+      final assessment = engine.evaluate('Maji ya uzazi yanavuja sana na chupa imepasuka');
+      expect(assessment.isUrgent || assessment.isEmergency, isTrue);
+      expect(assessment.triggeredRules.any((r) => r.id == 'water_leaking'), isTrue);
+    });
+
+    test('detects all 4 backbone danger signs verbatim in Kiswahili', () {
+      final a1 = engine.evaluate('Kutokwa na damu ukeni');
+      expect(a1.isEmergency, isTrue);
+      expect(a1.triggeredRules.any((r) => r.id == 'vaginal_bleeding'), isTrue);
+
+      final a2 = engine.evaluate('Kuumwa na kichwa na kiza machoni');
+      expect(a2.isEmergency || a2.isUrgent, isTrue);
+      expect(a2.triggeredRules.any((r) => r.id == 'severe_headache_visual'), isTrue);
+
+      final a3 = engine.evaluate('Mtoto kutocheza tumboni');
+      expect(a3.isEmergency || a3.isUrgent, isTrue);
+      expect(a3.triggeredRules.any((r) => r.id == 'reduced_fetal_movement'), isTrue);
+
+      final a4 = engine.evaluate('Maji ya uzazi kuvuja');
+      expect(a4.isEmergency || a4.isUrgent, isTrue);
+      expect(a4.triggeredRules.any((r) => r.id == 'water_leaking'), isTrue);
     });
   });
 

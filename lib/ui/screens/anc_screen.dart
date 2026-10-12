@@ -12,6 +12,7 @@ import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 import '../../core/models/models.dart';
 import '../../core/providers/app_providers.dart';
+import '../../core/services/facility_service.dart';
 import '../../core/services/supabase_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../widgets/mama_card.dart';
@@ -119,9 +120,12 @@ class AncScreen extends ConsumerWidget {
                         final currentUid = SupabaseService.instance.currentUserId;
                         final newAppt = Appointment(
                           id: const Uuid().v4(),
-                          userId: pregnancy?.userId ?? currentUid ?? 'demo-user-amani',
+                          userId: pregnancy?.userId ?? currentUid ?? SupabaseService.defaultSeedUserId,
                           pregnancyId: pregnancy?.id ?? 'preg-$currentUid',
-                          facilityId: pregnancy?.preferredFacilityId ?? 'pumwani_maternity',
+                          facilityId: pregnancy?.preferredFacilityId ??
+                              (FacilityService.instance.allFacilities.isNotEmpty
+                                  ? FacilityService.instance.allFacilities.first.id
+                                  : 'knh_nairobi'),
                           appointmentDate: selectedDate,
                           appointmentType: AppointmentType.routine,
                           status: AppointmentStatus.scheduled,
