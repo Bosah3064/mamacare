@@ -1,0 +1,105 @@
+name: mamacare_ke
+description: "AI-powered maternal wellbeing app for expectant mothers in Kenya"
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.11.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # Navigation
+  go_router: ^15.1.0
+
+  # State Management
+  flutter_riverpod: ^2.6.1
+  riverpod_annotation: ^2.6.1
+
+  # Supabase
+  supabase_flutter: ^2.9.0
+
+  # UI Components
+  google_fonts: ^6.2.1
+  flutter_svg: ^2.0.17
+  cached_network_image: ^3.4.1
+  shimmer: ^3.0.0
+  fl_chart: ^0.70.2
+  percent_indicator: ^4.2.5
+  flutter_animate: ^4.5.2
+  lottie: ^3.3.1
+  gap: ^3.0.1
+  cupertino_icons: ^1.0.8
+
+  # Forms & Validation
+  flutter_form_builder: any
+  form_builder_validators: any
+
+  # Local Storage & Offline
+  hive_flutter: ^1.1.0
+  hive: ^2.2.3
+  sqflite: ^2.4.2
+  path_provider: ^2.1.5
+  connectivity_plus: ^6.1.3
+
+  # Date & Time
+  intl: 0.20.2
+
+  # Maps (provider-abstracted)
+  google_maps_flutter: ^2.12.0
+  geolocator: ^14.0.0
+  geocoding: ^3.0.0
+  url_launcher: ^6.3.1
+
+  # Notifications
+  flutter_local_notifications: ^18.0.1
+
+  # Security
+  flutter_secure_storage: ^9.2.4
+  crypto: ^3.0.6
+
+  # Image handling
+  image_picker: ^1.1.2
+  image_cropper: ^8.0.2
+
+  # Utilities
+  uuid: ^4.5.1
+  json_annotation: ^4.9.0
+  freezed_annotation: ^2.4.4
+  equatable: ^2.0.7
+  logger: ^2.5.0
+  share_plus: ^10.1.4
+  package_info_plus: ^8.2.1
+  device_info_plus: ^11.2.1
+
+  # PDF generation (for ANC summary export)
+  pdf: ^3.11.2
+  printing: ^5.13.5
+
+  # Environment config
+  flutter_dotenv: ^5.2.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  build_runner: ^2.4.14
+  freezed: ^2.5.7
+  json_serializable: ^6.9.4
+  riverpod_generator: ^2.6.3
+  mockito: ^5.4.5
+  integration_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/icons/
+    - assets/lottie/
+    - assets/i18n/
+    - .env
